@@ -5,6 +5,7 @@ import fastifyCookie from '@fastify/cookie';
 import { appRoutes } from "./http/routes";
 import { ZodError } from "zod";
 import { env } from "./env";
+import { categoriesRoutes } from "./http/controllers/categories/routes";
 
 export const app = fastify()
 
@@ -21,6 +22,8 @@ app.register(fastifyJwt,{
 app.register(fastifyCookie)
 
 app.register(contentParser)
+
+app.register(categoriesRoutes)
 app.register(appRoutes)
 
 app.setErrorHandler((error, request, reply) => {
