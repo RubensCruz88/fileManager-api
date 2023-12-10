@@ -1,33 +1,35 @@
-import { UsersRepository, User } from '@/repositories/users-repository';
-import { InvalidCredentialsError } from './errors/invalid-credentials-error';
+import { FilesRepository } from '@/repositories/files-repository';
+import { File } from 'fastify-multer/lib/interfaces';
+import { InvalidFileError } from './errors/invalid-file-error';
 
 interface UploadServiceRequest {
-	user: string,
-	password: string
+	file: File,
+	key: string
 }
 
 interface UploadServiceReply {
-	user: User
+	file: any
 }
 
 export class UploadService {
 	constructor(
-		private usersRepository: UsersRepository
+		private filesRepository: FilesRepository
 	){}
 
-	execute({ user, password}: UploadServiceRequest): UploadServiceReply{
-		const userReturned = this.usersRepository.findByUser(user);
-
-		if(!userReturned){
-			throw new InvalidCredentialsError()
+	async execute({ file, key }: UploadServiceRequest): Promise<UploadServiceReply | null>{
+		if(!file.filename || !file.path){
+			throw new InvalidFileError()
 		}
 
-		const doesPasswordMatches = (password === userReturned.password)
-
-		if(!doesPasswordMatches){
-			throw new InvalidCredentialsError()
+		const params = {
+			id: file.filename,
+			key: key,
+			original_name: file.originalname,
+			path: file.path
 		}
 
-		return {user: userReturned}
+		const fileCreated = await this.filesRepository.create(params)
+
+		return {file: fileCreated}
 	}
 }
