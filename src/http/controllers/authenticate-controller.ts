@@ -15,9 +15,33 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
 	try{
 		const inMemoryUsersRepository = new InMemoryUsersRepository()
 		const authenticateService = new AuthenticateService(inMemoryUsersRepository)
-		await authenticateService.execute({
+		const userReturned = authenticateService.execute({
 			user,
 			password
+		})
+
+		const token = await reply.jwtSign({},{
+			sign: {
+				sub: userReturned.user.user
+			}
+		})
+
+		const refreshToken = await reply.jwtSign({},{
+			sign: {
+				sub: userReturned.user.user,
+				expiresIn: '7d'
+			}
+		})
+
+		return reply
+			.setCookie('refreshToken',refreshToken,{
+				path: '/',
+				secure: true,
+				sameSite: true,
+				httpOnly: true
+			})
+			.status(200).send({
+			token
 		})
 	} catch (err){
 		if(err instanceof InvalidCredentialsError){
@@ -26,6 +50,4 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
 
 		throw err
 	}
-
-	return reply.status(200).send()
 }
